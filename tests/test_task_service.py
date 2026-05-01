@@ -14,7 +14,7 @@ from app.models.task import Task
 from app.models.task_audit import TaskAudit
 from app.models.task_types import TaskPriority, TaskStatus
 from app.repositories import TaskRepository
-from app.services import TaskNotFoundError, TaskService
+from app.services import TaskCannotReopenError, TaskNotFoundError, TaskService
 
 
 def test_create_task_persists_task_and_audit(db_session: Session) -> None:
@@ -182,3 +182,32 @@ def test_update_task_raises_not_found(db_session: Session) -> None:
         assert "not found" in str(error)
     else:
         raise AssertionError("TaskNotFoundError was not raised")
+
+
+def test_reopen_task_requires_completed_status(db_session: Session) -> None:
+    service: TaskService = TaskService()
+    task: Task = service.create_task(db_session, TaskCreateRequest(title="Task", description="Original"))
+
+    try:
+        service.reopen_task(db_session, task.id)
+    except TaskCannotReopenError as error:
+        assert "queued" in str(error).lower() or TaskStatus.QUEUED.value in str(error)
+    else:
+        raise AssertionError("TaskCannotReopenError was not raised")
+
+    moved: Task = service.update_task(
+        db_session,
+        task.id,
+        TaskUpdateRequest(status=TaskStatus.IN_PROGRESS),
+    )
+    try:
+        service.reopen_task(db_session, moved.id)
+    except TaskCannotReopenError as error:
+        assert TaskStatus.IN_PROGRESS.value in str(error)
+    else:
+        raise AssertionError("TaskCannotReopenError was not raised for in_progress")
+
+    done: Task = service.complete_task(db_session, task.id)
+    assert done.status == TaskStatus.COMPLETED
+    reopened: Task = service.reopen_task(db_session, task.id)
+    assert reopened.status == TaskStatus.QUEUED

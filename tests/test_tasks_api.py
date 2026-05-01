@@ -172,3 +172,18 @@ def test_list_tasks_rejects_invalid_pagination_params(client: TestClient) -> Non
     error_fields: set[str] = {error["field"] for error in response.json()["error"]["details"]}
     assert "limit" in error_fields
     assert "offset" in error_fields
+
+
+def test_reopen_returns_409_when_task_not_completed(client: TestClient) -> None:
+    create_response = client.post(
+        "/api/v1/tasks",
+        json={"title": "Nao concluida", "description": "", "priority": "medium"},
+    )
+    assert create_response.status_code == 201
+    task_id = create_response.json()["id"]
+
+    reopen_response = client.patch(f"/api/v1/tasks/{task_id}/reopen")
+    assert reopen_response.status_code == 409
+    body = reopen_response.json()
+    assert body["error"]["code"] == "TASK_REOPEN_REQUIRES_COMPLETED"
+    assert body["error"]["message"] == "Only completed tasks can be reopened."

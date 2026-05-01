@@ -1,13 +1,11 @@
-fastapi
-uvicorn[standard]
-sqlalchemy
-psycopg[binary]
-psycopg2-binary
-pydantic
-pydantic-settings
-alembic
-python-dotenv
-httpx
-pytest
-pytest-asyncio
-pytest-cov
+# Dependências diretas com versões fixas (alinhadas ao ambiente atual do projeto).
+fastapi==0.136.1
+uvicorn[standard]==0.46.0
+sqlalchemy==2.0.49
+psycopg[binary]==3.3.3
+pydantic==2.13.3
+pydantic-settings==2.14.0
+alembic==1.18.4
+python-dotenv==1.2.2
+httpx==0.28.1
+pytest==9.0.3

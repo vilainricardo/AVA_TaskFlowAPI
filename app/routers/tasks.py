@@ -15,7 +15,7 @@ from app.dtos.tasks import (
     TaskReadResponse,
     TaskUpdateRequest,
 )
-from app.services import TaskNotFoundError, TaskService
+from app.services import TaskCannotReopenError, TaskNotFoundError, TaskService
 
 router: APIRouter = APIRouter(prefix="/tasks", tags=["tasks"])
 
@@ -37,6 +37,18 @@ def _raise_not_found_error(error: TaskNotFoundError) -> None:
         status_code=status.HTTP_404_NOT_FOUND,
         code="TASK_NOT_FOUND",
         message="Task not found.",
+    ) from error
+
+
+def _raise_cannot_reopen_error(error: TaskCannotReopenError) -> None:
+    """EN: Reopen forbidden when task is not completed → HTTP 409.
+    PT-BR: Reabrir so e permitido com tarefa concluida → HTTP 409.
+    """
+
+    raise ApiException(
+        status_code=status.HTTP_409_CONFLICT,
+        code="TASK_REOPEN_REQUIRES_COMPLETED",
+        message="Only completed tasks can be reopened.",
     ) from error
 
 
@@ -193,7 +205,8 @@ def complete_task(
         "EN: Reopen a completed task using its UUID.\n"
         "PT-BR: Reabre uma tarefa concluida usando seu UUID.\n\n"
         "Input / Entrada: task_id path parameter.\n"
-        "Output / Saida: Updated TaskReadResponse or 404."
+        "Output / Saida: TaskReadResponse; 404 se a tarefa nao existir; 409 se o status nao for concluido.\n"
+        "Output / EN: TaskReadResponse; 404 when missing; 409 when task is not in completed status."
     ),
     response_description="Reopened task / Tarefa reaberta",
 )
@@ -210,6 +223,8 @@ def reopen_task(
         task = service.reopen_task(session, task_id)
     except TaskNotFoundError as error:
         _raise_not_found_error(error)
+    except TaskCannotReopenError as error:
+        _raise_cannot_reopen_error(error)
     return TaskReadResponse.model_validate(task)
 
 

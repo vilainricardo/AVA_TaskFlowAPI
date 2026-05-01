@@ -26,6 +26,14 @@ class TaskNotFoundError(Exception):
     pass
 
 
+class TaskCannotReopenError(Exception):
+    """EN: Raised when reopen is attempted on a task not in COMPLETED status.
+    PT-BR: Lanca-se quando reabrir e pedido mas a tarefa nao esta concluida.
+    """
+
+    pass
+
+
 def utc_now() -> datetime:
     """EN: Return the current UTC datetime.
     PT-BR: Retorna a data e hora atual em UTC.
@@ -222,6 +230,10 @@ class TaskService:
         """
 
         task: Task = self._get_task_or_raise(session, task_id)
+        if task.status != TaskStatus.COMPLETED:
+            raise TaskCannotReopenError(
+                f"Task {task_id} cannot be reopened because status is {task.status.value}, not completed"
+            )
         before_state: dict[str, Any] = self._serialize_task(task)
         task.status = TaskStatus.QUEUED
         task.updated_at = utc_now()
