@@ -5,16 +5,22 @@ from uuid import UUID
 
 from sqlalchemy.orm import Session
 
+from app.dtos.tasks import (
+    TaskCompleteRequest,
+    TaskCreateRequest,
+    TaskFilterRequest,
+    TaskReopenRequest,
+    TaskUpdateRequest,
+)
 from app.models.task import Task
 from app.models.task_audit import TaskAudit
 from app.repositories import TaskRepository
-from app.schemas import TaskComplete, TaskCreate, TaskFilter, TaskReopen, TaskUpdate
 from app.services import TaskNotFoundError, TaskService
 
 
 def test_create_task_persists_task_and_audit(db_session: Session) -> None:
     service: TaskService = TaskService()
-    payload: TaskCreate = TaskCreate(
+    payload: TaskCreateRequest = TaskCreateRequest(
         title="Implementar API",
         description="Criar endpoints principais",
         priority=2,
@@ -38,11 +44,11 @@ def test_list_tasks_with_filters(db_session: Session) -> None:
 
     service.create_task(
         db_session,
-        TaskCreate(title="Task Alpha", description="Primeira", completed=False, priority=1),
+        TaskCreateRequest(title="Task Alpha", description="Primeira", completed=False, priority=1),
     )
     service.create_task(
         db_session,
-        TaskCreate(title="Task Beta", description="Segunda", completed=True, priority=3),
+        TaskCreateRequest(title="Task Beta", description="Segunda", completed=True, priority=3),
     )
 
     tasks: list[Task] = repository.list(db_session, completed=True, priority=3, text="beta")
@@ -53,25 +59,25 @@ def test_list_tasks_with_filters(db_session: Session) -> None:
 
 def test_update_complete_reopen_and_delete_task(db_session: Session) -> None:
     service: TaskService = TaskService()
-    task: Task = service.create_task(db_session, TaskCreate(title="Task", description="Original"))
+    task: Task = service.create_task(db_session, TaskCreateRequest(title="Task", description="Original"))
 
     updated: Task = service.update_task(
         db_session,
         task.id,
-        TaskUpdate(title="Task Atualizada", description=None, priority=5),
+        TaskUpdateRequest(title="Task Atualizada", description=None, priority=5),
     )
     assert updated.title == "Task Atualizada"
     assert updated.description is None
     assert updated.priority == 5
 
-    completed: Task = service.complete_task(db_session, task.id, TaskComplete())
+    completed: Task = service.complete_task(db_session, task.id, TaskCompleteRequest())
     assert completed.completed is True
 
-    reopened: Task = service.reopen_task(db_session, task.id, TaskReopen())
+    reopened: Task = service.reopen_task(db_session, task.id, TaskReopenRequest())
     assert reopened.completed is False
 
     service.delete_task(db_session, task.id)
-    remaining: list[Task] = service.list_tasks(db_session, TaskFilter())
+    remaining: list[Task] = service.list_tasks(db_session, TaskFilterRequest())
     assert len(remaining) == 0
 
 

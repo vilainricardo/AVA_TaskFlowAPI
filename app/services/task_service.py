@@ -6,10 +6,17 @@ from uuid import UUID
 
 from sqlalchemy.orm import Session
 
+from app.dtos.tasks import (
+    TaskCompleteRequest,
+    TaskCreateRequest,
+    TaskFilterRequest,
+    TaskReadResponse,
+    TaskReopenRequest,
+    TaskUpdateRequest,
+)
 from app.models.task import Task
 from app.models.task_audit import TaskAudit
 from app.repositories.task_repository import TaskRepository
-from app.schemas.task import TaskComplete, TaskCreate, TaskFilter, TaskRead, TaskReopen, TaskUpdate
 
 
 class TaskNotFoundError(Exception):
@@ -45,7 +52,7 @@ class TaskService:
         PT-BR: Converte um model Task em um dicionario seguro para JSON.
         """
 
-        return TaskRead.model_validate(task).model_dump(mode="json")
+        return TaskReadResponse.model_validate(task).model_dump(mode="json")
 
     def _create_audit(
         self,
@@ -90,7 +97,7 @@ class TaskService:
             raise TaskNotFoundError(f"Task {task_id} not found")
         return task
 
-    def create_task(self, session: Session, payload: TaskCreate) -> Task:
+    def create_task(self, session: Session, payload: TaskCreateRequest) -> Task:
         """EN: Create a task and store its initial audit entry.
         PT-BR: Cria uma tarefa e grava sua entrada inicial de auditoria.
 
@@ -121,7 +128,7 @@ class TaskService:
         session.refresh(task)
         return task
 
-    def list_tasks(self, session: Session, filters: TaskFilter) -> list[Task]:
+    def list_tasks(self, session: Session, filters: TaskFilterRequest) -> list[Task]:
         """EN: Return tasks filtered by status, priority, and text.
         PT-BR: Retorna tarefas filtradas por status, prioridade e texto.
 
@@ -147,7 +154,7 @@ class TaskService:
 
         return self._get_task_or_raise(session, task_id)
 
-    def update_task(self, session: Session, task_id: UUID, payload: TaskUpdate) -> Task:
+    def update_task(self, session: Session, task_id: UUID, payload: TaskUpdateRequest) -> Task:
         """EN: Update mutable task fields and store an audit record.
         PT-BR: Atualiza campos mutaveis da tarefa e armazena auditoria.
         """
@@ -172,7 +179,7 @@ class TaskService:
         session.refresh(task)
         return task
 
-    def complete_task(self, session: Session, task_id: UUID, payload: TaskComplete) -> Task:
+    def complete_task(self, session: Session, task_id: UUID, payload: TaskCompleteRequest) -> Task:
         """EN: Mark a task as completed and audit the transition.
         PT-BR: Marca uma tarefa como concluida e audita a transicao.
         """
@@ -193,7 +200,7 @@ class TaskService:
         session.refresh(task)
         return task
 
-    def reopen_task(self, session: Session, task_id: UUID, payload: TaskReopen) -> Task:
+    def reopen_task(self, session: Session, task_id: UUID, payload: TaskReopenRequest) -> Task:
         """EN: Reopen a completed task and audit the transition.
         PT-BR: Reabre uma tarefa concluida e audita a transicao.
         """
