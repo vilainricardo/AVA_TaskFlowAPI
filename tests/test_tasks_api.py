@@ -26,6 +26,20 @@ def test_create_and_get_task(client: TestClient) -> None:
     assert get_response.json()["id"] == str(task_id)
 
 
+def test_create_task_rejects_invalid_payload(client: TestClient) -> None:
+    response = client.post(
+        "/api/v1/tasks",
+        json={
+            "description": "Sem titulo",
+            "priority": 0,
+        },
+    )
+
+    assert response.status_code == 422
+    body = response.json()
+    assert len(body["detail"]) >= 1
+
+
 def test_list_update_complete_reopen_delete_task(client: TestClient) -> None:
     create_response = client.post(
         "/api/v1/tasks",
@@ -65,3 +79,22 @@ def test_list_update_complete_reopen_delete_task(client: TestClient) -> None:
 
     get_after_delete = client.get(f"/api/v1/tasks/{task_id}")
     assert get_after_delete.status_code == 404
+
+
+def test_mutation_endpoints_return_404_for_missing_task(client: TestClient) -> None:
+    missing_id = "00000000-0000-0000-0000-000000000000"
+
+    update_response = client.put(
+        f"/api/v1/tasks/{missing_id}",
+        json={"title": "Nao existe"},
+    )
+    assert update_response.status_code == 404
+
+    complete_response = client.patch(f"/api/v1/tasks/{missing_id}/complete", json={"completed": True})
+    assert complete_response.status_code == 404
+
+    reopen_response = client.patch(f"/api/v1/tasks/{missing_id}/reopen", json={"completed": False})
+    assert reopen_response.status_code == 404
+
+    delete_response = client.delete(f"/api/v1/tasks/{missing_id}")
+    assert delete_response.status_code == 404

@@ -47,12 +47,7 @@ def upgrade() -> None:
     op.create_table(
         "task_audit",
         sa.Column("id", postgresql.UUID(as_uuid=True), primary_key=True, nullable=False),
-        sa.Column(
-            "task_id",
-            postgresql.UUID(as_uuid=True),
-            sa.ForeignKey("tasks.id", ondelete="CASCADE"),
-            nullable=False,
-        ),
+        sa.Column("task_id", postgresql.UUID(as_uuid=True), nullable=False),
         sa.Column("action", sa.String(length=50), nullable=False),
         sa.Column("before_state", postgresql.JSONB(astext_type=sa.Text()), nullable=True),
         sa.Column("after_state", postgresql.JSONB(astext_type=sa.Text()), nullable=True),

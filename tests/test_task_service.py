@@ -81,6 +81,49 @@ def test_update_complete_reopen_and_delete_task(db_session: Session) -> None:
     assert len(remaining) == 0
 
 
+def test_task_mutations_record_audit_history(db_session: Session) -> None:
+    service: TaskService = TaskService()
+    task: Task = service.create_task(db_session, TaskCreateRequest(title="Task", description="Original"))
+
+    service.update_task(db_session, task.id, TaskUpdateRequest(title="Task Atualizada"))
+    service.complete_task(db_session, task.id, TaskCompleteRequest())
+    service.reopen_task(db_session, task.id, TaskReopenRequest())
+
+    audits: list[TaskAudit] = db_session.query(TaskAudit).order_by(TaskAudit.created_at.asc()).all()
+    assert [audit.action for audit in audits] == ["CREATE", "UPDATE", "COMPLETE", "REOPEN"]
+    assert audits[-1].after_state["completed"] is False
+
+    service.delete_task(db_session, task.id)
+    remaining: list[Task] = service.list_tasks(db_session, TaskFilterRequest())
+    assert remaining == []
+
+
+def test_delete_task_keeps_audit_history(db_session: Session) -> None:
+    service: TaskService = TaskService()
+    task: Task = service.create_task(db_session, TaskCreateRequest(title="Task", description="Original"))
+
+    service.update_task(db_session, task.id, TaskUpdateRequest(title="Task Atualizada"))
+    service.delete_task(db_session, task.id)
+
+    remaining_tasks: list[Task] = service.list_tasks(db_session, TaskFilterRequest())
+    audits: list[TaskAudit] = db_session.query(TaskAudit).order_by(TaskAudit.created_at.asc()).all()
+
+    assert remaining_tasks == []
+    assert [audit.action for audit in audits] == ["CREATE", "UPDATE", "DELETE"]
+
+
+def test_list_tasks_with_filters_returns_no_results_when_no_match(db_session: Session) -> None:
+    service: TaskService = TaskService()
+    service.create_task(db_session, TaskCreateRequest(title="Task Alpha", description="Primeira", priority=1))
+
+    tasks: list[Task] = service.list_tasks(
+        db_session,
+        TaskFilterRequest(completed=True, priority=3, text="inexistente"),
+    )
+
+    assert tasks == []
+
+
 def test_get_task_raises_not_found(db_session: Session) -> None:
     service: TaskService = TaskService()
 

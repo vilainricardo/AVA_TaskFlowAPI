@@ -1,17 +1,14 @@
 from __future__ import annotations
 
 from datetime import datetime, timezone
-from typing import TYPE_CHECKING, ClassVar
+from typing import ClassVar
 from uuid import UUID, uuid4
 
 from sqlalchemy import Boolean, DateTime, Index, SmallInteger, String, Text, text
 from sqlalchemy.dialects.postgresql import UUID as PGUUID
-from sqlalchemy.orm import Mapped, mapped_column, relationship
+from sqlalchemy.orm import Mapped, mapped_column
 
 from app.core.database import Base
-
-if TYPE_CHECKING:
-    from app.models.task_audit import TaskAudit
 
 
 def utc_now() -> datetime:
@@ -62,10 +59,4 @@ class Task(Base):
         default=utc_now,
         onupdate=utc_now,
         server_default=text("timezone('utc', now())"),
-    )
-
-    audits: Mapped[list[TaskAudit]] = relationship(
-        back_populates="task",
-        cascade="all, delete-orphan",
-        passive_deletes=True,
     )
