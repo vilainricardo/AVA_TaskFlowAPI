@@ -16,7 +16,7 @@ Suportar futura elaboração do Software Architecture Document (SAD).
 - app/services/
 - app/repositories/
 - app/models/
-- app/schemas/
+- app/dtos/
 - tests/
 
 ## 4. Decisões Técnicas em Aberto

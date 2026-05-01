@@ -13,14 +13,12 @@ TASKS {
 
 TASK_AUDIT {
     uuid id PK
-    uuid task_id FK
+    uuid task_id
     varchar action
     jsonb before_state
     jsonb after_state
     timestamptz created_at
 }
-
-TASKS ||--o{ TASK_AUDIT : generates
 ```
 
 ```mermaid
