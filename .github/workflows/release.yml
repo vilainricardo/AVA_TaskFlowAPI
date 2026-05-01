@@ -1,11 +1,12 @@
-# Pipeline de release: valida migrações + testes com PostgreSQL e, em tag v*, cria GitHub Release.
-# Disparo: tag semântica (ex.: v1.0.0) ou execução manual em Actions.
+# Pipeline de release: PostgreSQL efêmero + alembic + pytest; ao publicar tag, cria GitHub Release.
+# Tags que disparam: v* (ex.: v0.1.0) ou semver numérico (ex.: 0.1.0). Também: workflow_dispatch.
 name: Release
 
 on:
   push:
     tags:
       - "v*"
+      - "[0-9]*.[0-9]*.[0-9]*"
   workflow_dispatch:
 
 permissions:
