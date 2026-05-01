@@ -1,12 +1,12 @@
 # Pipeline de release: PostgreSQL efêmero + alembic + pytest; ao publicar tag, cria GitHub Release.
-# Tags que disparam: v* (ex.: v0.1.0) ou semver numérico (ex.: 0.1.0). Também: workflow_dispatch.
+# Disparo em push de qualquer tag sem "/" (ex.: 0.1.0, v1.0.0). GitHub usa glob, não regex.
+# Também: Actions → Release → Run workflow (workflow_dispatch).
 name: Release
 
 on:
   push:
     tags:
-      - "v*"
-      - "[0-9]*.[0-9]*.[0-9]*"
+      - "*"
   workflow_dispatch:
 
 permissions:
