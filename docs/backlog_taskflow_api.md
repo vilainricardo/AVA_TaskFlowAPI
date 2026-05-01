@@ -60,11 +60,74 @@ Este backlog foi revisado com base no código, nos testes, nas migrations, na do
 - [x] Listar todos os endpoints do MVP
 - [x] Definir o comportamento esperado de cada endpoint
 - [x] Definir códigos HTTP esperados por cenário
-- [ ] Definir mensagens de erro padrão
-- [ ] Definir critérios de aceitação por endpoint
+- [x] Definir mensagens de erro padrão
+- [x] Definir critérios de aceitação por endpoint
 - [x] Definir filtros disponíveis na listagem
 - [x] Definir regras de ordenação
-- [ ] Definir necessidade de paginação
+- [x] Definir necessidade de paginação
+
+#### Definições consolidadas (MVP)
+
+**Padrão de erro para respostas 4xx/5xx**
+
+- Estrutura base:
+  - `error.code`: identificador estável da falha (ex.: `TASK_NOT_FOUND`)
+  - `error.message`: mensagem padronizada, legível para cliente
+  - `error.details`: lista opcional com detalhes de validação/campo
+  - `error.trace_id`: identificador opcional para suporte/observabilidade
+
+Exemplo:
+
+```json
+{
+  "error": {
+    "code": "VALIDATION_ERROR",
+    "message": "Request payload validation failed.",
+    "details": [
+      {
+        "field": "priority",
+        "message": "Invalid priority value."
+      }
+    ],
+    "trace_id": "01HV..."
+  }
+}
+```
+
+**Mensagens de erro padrão**
+
+- `TASK_NOT_FOUND`: "Task not found."
+- `VALIDATION_ERROR`: "Request payload validation failed."
+- `INVALID_QUERY_PARAM`: "Query parameter validation failed."
+- `DATABASE_ERROR`: "Database operation failed."
+- `INTERNAL_SERVER_ERROR`: "Unexpected internal error."
+
+**Paginação (padrão para endpoints de listagem)**
+
+- Estratégia: paginação por `limit` + `offset`.
+- Parâmetros:
+  - `limit` (opcional): inteiro entre 1 e 100, default `20`.
+  - `offset` (opcional): inteiro maior ou igual a 0, default `0`.
+- Metadados no retorno de listagem:
+  - `items`: lista da página atual
+  - `pagination.limit`
+  - `pagination.offset`
+  - `pagination.total`
+  - `pagination.has_next`
+
+Exemplo:
+
+```json
+{
+  "items": [],
+  "pagination": {
+    "limit": 20,
+    "offset": 0,
+    "total": 0,
+    "has_next": false
+  }
+}
+```
 
 ### 1.4 Requisitos não funcionais
 - [x] Definir meta de desempenho
@@ -292,6 +355,45 @@ Este backlog foi revisado com base no código, nos testes, nas migrations, na do
 - [x] Documentar response model de cada endpoint
 - [x] Documentar exemplos básicos quando necessário
 
+### 8.4 Critérios de aceitação por endpoint
+- [x] Definir critérios de aceitação para `POST /tasks`
+- [x] Definir critérios de aceitação para `GET /tasks`
+- [x] Definir critérios de aceitação para `GET /tasks/{task_id}`
+- [x] Definir critérios de aceitação para `PUT /tasks/{task_id}`
+- [x] Definir critérios de aceitação para `PATCH /tasks/{task_id}/complete`
+- [x] Definir critérios de aceitação para `PATCH /tasks/{task_id}/reopen`
+- [x] Definir critérios de aceitação para `DELETE /tasks/{task_id}`
+
+**POST `/tasks`**
+- Dado payload válido, quando criar task, então retorna `201` com `id`, timestamps UTC e dados persistidos.
+- Dado payload inválido, quando criar task, então retorna `422` no padrão de erro (`VALIDATION_ERROR`).
+
+**GET `/tasks`**
+- Dado filtros válidos, quando listar tasks, então retorna `200` com lista ordenada e paginação aplicada.
+- Dado parâmetros de paginação inválidos, quando listar tasks, então retorna `422` no padrão de erro.
+
+**GET `/tasks/{task_id}`**
+- Dado `task_id` existente, quando consultar task, então retorna `200` com representação completa.
+- Dado `task_id` inexistente, quando consultar task, então retorna `404` com `TASK_NOT_FOUND`.
+- Dado `task_id` inválido, quando consultar task, então retorna `422`.
+
+**PUT `/tasks/{task_id}`**
+- Dado `task_id` existente e payload válido, quando atualizar task, então retorna `200` com dados atualizados e `updated_at` alterado.
+- Dado `task_id` inexistente, quando atualizar task, então retorna `404` com `TASK_NOT_FOUND`.
+- Dado payload inválido, quando atualizar task, então retorna `422`.
+
+**PATCH `/tasks/{task_id}/complete`**
+- Dado `task_id` existente, quando concluir task, então retorna `200` com status `completed`.
+- Dado `task_id` inexistente, quando concluir task, então retorna `404` com `TASK_NOT_FOUND`.
+
+**PATCH `/tasks/{task_id}/reopen`**
+- Dado `task_id` existente, quando reabrir task, então retorna `200` com status `queued`.
+- Dado `task_id` inexistente, quando reabrir task, então retorna `404` com `TASK_NOT_FOUND`.
+
+**DELETE `/tasks/{task_id}`**
+- Dado `task_id` existente, quando excluir task, então retorna `204` sem body.
+- Dado `task_id` inexistente, quando excluir task, então retorna `404` com `TASK_NOT_FOUND`.
+
 ## Fase 9: Tratamento de erros
 
 **Status geral:** Parcial
@@ -299,7 +401,7 @@ Este backlog foi revisado com base no código, nos testes, nas migrations, na do
 ### 9.1 Erros de domínio
 - [x] Criar erro para task não encontrada
 - [x] Mapear erro de domínio para resposta HTTP
-- [ ] Padronizar mensagens de erro
+- [x] Padronizar mensagens de erro
 
 ### 9.2 Validação
 - [x] Garantir resposta 422 para payload inválido
@@ -307,9 +409,16 @@ Este backlog foi revisado com base no código, nos testes, nas migrations, na do
 - [x] Garantir consistência entre API e DTOs
 
 ### 9.3 Erros inesperados
-- [ ] Definir comportamento para falhas de banco
-- [ ] Definir comportamento para falhas de conexão
-- [ ] Definir retorno em falhas internas
+- [x] Definir comportamento para falhas de banco
+- [x] Definir comportamento para falhas de conexão
+- [x] Definir retorno em falhas internas
+
+**Comportamento padrão para exceções inesperadas**
+
+- Falha de banco (SQLAlchemy/driver): responder `503` com `DATABASE_ERROR`.
+- Falha de conexão temporária: responder `503` com `DATABASE_ERROR`.
+- Falha interna não tratada: responder `500` com `INTERNAL_SERVER_ERROR`.
+- Não expor stack trace para o cliente; detalhes técnicos apenas em log interno com `trace_id`.
 
 ## Fase 10: Testes
 

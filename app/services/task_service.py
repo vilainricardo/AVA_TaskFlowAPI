@@ -146,6 +146,23 @@ class TaskService:
             text=filters.text,
         )
 
+    def list_tasks_paginated(self, session: Session, filters: TaskFilterRequest) -> tuple[list[Task], int]:
+        tasks: list[Task] = self._repository.list(
+            session,
+            status=filters.status,
+            priority=filters.priority,
+            text=filters.text,
+            limit=filters.limit,
+            offset=filters.offset,
+        )
+        total: int = self._repository.count(
+            session,
+            status=filters.status,
+            priority=filters.priority,
+            text=filters.text,
+        )
+        return tasks, total
+
     def get_task(self, session: Session, task_id: UUID) -> Task:
         """EN: Fetch a task by id.
         PT-BR: Busca uma tarefa pelo id.

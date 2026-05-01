@@ -3,13 +3,15 @@ from __future__ import annotations
 from typing import Annotated
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, HTTPException, Response, status
+from fastapi import APIRouter, Depends, Response, status
 from sqlalchemy.orm import Session
 
 from app.core.database import get_db
+from app.core.exceptions import ApiException
 from app.dtos.tasks import (
     TaskCreateRequest,
     TaskFilterRequest,
+    TaskListResponse,
     TaskReadResponse,
     TaskUpdateRequest,
 )
@@ -31,9 +33,10 @@ def _raise_not_found_error(error: TaskNotFoundError) -> None:
     PT-BR: Converte um erro de inexistencia em resposta HTTP 404.
     """
 
-    raise HTTPException(
+    raise ApiException(
         status_code=status.HTTP_404_NOT_FOUND,
-        detail=str(error),
+        code="TASK_NOT_FOUND",
+        message="Task not found.",
     ) from error
 
 
@@ -65,7 +68,7 @@ def create_task(
 
 @router.get(
     "",
-    response_model=list[TaskReadResponse],
+    response_model=TaskListResponse,
     summary="List tasks / Listar tarefas",
     description=(
         "EN: Return tasks filtered by status, priority, and text search.\n"
@@ -79,13 +82,22 @@ def list_tasks(
     filters: Annotated[TaskFilterRequest, Depends()],
     session: Annotated[Session, Depends(get_db)],
     service: Annotated[TaskService, Depends(get_task_service)],
-) -> list[TaskReadResponse]:
+) -> TaskListResponse:
     """EN: List tasks using query filters.
     PT-BR: Lista tarefas usando filtros de consulta.
     """
 
-    tasks = service.list_tasks(session, filters)
-    return [TaskReadResponse.model_validate(task) for task in tasks]
+    tasks, total = service.list_tasks_paginated(session, filters)
+    has_next = filters.offset + filters.limit < total
+    return TaskListResponse(
+        items=[TaskReadResponse.model_validate(task) for task in tasks],
+        pagination={
+            "limit": filters.limit,
+            "offset": filters.offset,
+            "total": total,
+            "has_next": has_next,
+        },
+    )
 
 
 @router.get(

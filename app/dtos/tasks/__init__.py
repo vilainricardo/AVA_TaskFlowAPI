@@ -4,12 +4,18 @@ from app.dtos.tasks.request import (
     TaskFilterRequest,
     TaskUpdateRequest,
 )
-from app.dtos.tasks.response import TaskReadResponse
+from app.dtos.tasks.response import (
+    PaginationMetaResponse,
+    TaskListResponse,
+    TaskReadResponse,
+)
 
 __all__: list[str] = [
     "TaskBase",
     "TaskCreateRequest",
     "TaskFilterRequest",
+    "TaskListResponse",
+    "PaginationMetaResponse",
     "TaskReadResponse",
     "TaskUpdateRequest",
 ]

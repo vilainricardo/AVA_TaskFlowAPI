@@ -35,6 +35,7 @@ The goal of the project is to demonstrate a simple but well-structured API for c
 ## Funcionalidades
 - Criar tarefas
 - Listar tarefas com filtros por status, prioridade e texto
+- Listar tarefas com paginação (`limit` e `offset`)
 - Consultar uma tarefa pelo ID
 - Atualizar dados da tarefa
 - Alterar o status da tarefa para concluída
@@ -42,10 +43,12 @@ The goal of the project is to demonstrate a simple but well-structured API for c
 - Excluir uma tarefa
 - Manter histórico de auditoria das alterações
 - Expor health check e documentação automática
+- Retornar erros em formato padronizado (`error.code`, `error.message`, `error.details`, `error.trace_id`)
 
 ## Features
 - Create tasks
 - List tasks with filters by status, priority, and text search
+- List tasks with pagination (`limit` and `offset`)
 - Get a task by ID
 - Update task data
 - Move a task to the completed status
@@ -53,6 +56,7 @@ The goal of the project is to demonstrate a simple but well-structured API for c
 - Delete a task
 - Keep an audit history of changes
 - Expose a health check and automatic documentation
+- Return errors using a standardized format (`error.code`, `error.message`, `error.details`, `error.trace_id`)
 
 ## Stack Tecnológica
 - Python
@@ -206,7 +210,7 @@ Base path da API: `/api/v1`
 | Método | Rota | Descrição |
 | --- | --- | --- |
 | `POST` | `/tasks` | Cria uma tarefa |
-| `GET` | `/tasks` | Lista tarefas com filtros opcionais |
+| `GET` | `/tasks` | Lista tarefas com filtros opcionais e paginação (`limit`, `offset`) |
 | `GET` | `/tasks/{task_id}` | Consulta uma tarefa pelo ID |
 | `PUT` | `/tasks/{task_id}` | Atualiza uma tarefa |
 | `PATCH` | `/tasks/{task_id}/complete` | Altera o status da tarefa para concluída |
@@ -220,7 +224,7 @@ API base path: `/api/v1`
 | Method | Route | Description |
 | --- | --- | --- |
 | `POST` | `/tasks` | Create a task |
-| `GET` | `/tasks` | List tasks with optional filters |
+| `GET` | `/tasks` | List tasks with optional filters and pagination (`limit`, `offset`) |
 | `GET` | `/tasks/{task_id}` | Get a task by ID |
 | `PUT` | `/tasks/{task_id}` | Update a task |
 | `PATCH` | `/tasks/{task_id}/complete` | Mark a task as completed |
@@ -279,27 +283,54 @@ Expected response:
 ```
 
 ### Listar tarefas / List tasks
-Para listar tarefas com filtro, você pode usar uma requisição `GET`:
+Para listar tarefas com filtro e paginação, você pode usar uma requisição `GET`:
 
 ```bash
-curl "http://127.0.0.1:8000/api/v1/tasks?status=queued&priority=high&text=study"
+curl "http://127.0.0.1:8000/api/v1/tasks?status=queued&priority=high&text=study&limit=20&offset=0"
 ```
 
 Response example:
 
 ```json
-[
-  {
-    "id": "uuid-generated-by-the-api",
-    "title": "Study tests",
-    "description": "Review coverage",
-    "status": "queued",
-    "priority": "high",
-    "due_date": null,
-    "created_at": "2026-05-01T12:00:00Z",
-    "updated_at": "2026-05-01T12:00:00Z"
+{
+  "items": [
+    {
+      "id": "uuid-generated-by-the-api",
+      "title": "Study tests",
+      "description": "Review coverage",
+      "status": "queued",
+      "priority": "high",
+      "due_date": null,
+      "created_at": "2026-05-01T12:00:00Z",
+      "updated_at": "2026-05-01T12:00:00Z"
+    }
+  ],
+  "pagination": {
+    "limit": 20,
+    "offset": 0,
+    "total": 1,
+    "has_next": false
   }
-]
+}
+```
+
+### Erro padronizado / Standard error
+Quando ocorrer erro de validação, domínio ou falha interna, a API responde no formato padrão:
+
+```json
+{
+  "error": {
+    "code": "VALIDATION_ERROR",
+    "message": "Request payload validation failed.",
+    "details": [
+      {
+        "field": "priority",
+        "message": "Input should be 'low', 'medium', 'high' or 'urgent'"
+      }
+    ],
+    "trace_id": "uuid-generated-by-the-api"
+  }
+}
 ```
 
 ### Atualizar uma tarefa / Update a task
