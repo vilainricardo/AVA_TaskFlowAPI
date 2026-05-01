@@ -7,6 +7,7 @@ Create Date: 2026-05-01
 from __future__ import annotations
 
 from alembic import op
+from sqlalchemy import inspect
 
 # revision identifiers, used by Alembic.
 revision = "0002_drop_audit_cascade"
@@ -16,7 +17,18 @@ depends_on = None
 
 
 def upgrade() -> None:
-    op.drop_constraint("task_audit_task_id_fkey", "task_audit", type_="foreignkey")
+    # 0001 can leave task_audit without an FK (nome auto-gerado varia). Só remove se existir.
+    bind = op.get_bind()
+    inspector = inspect(bind)
+    for fk in inspector.get_foreign_keys("task_audit"):
+        if fk.get("referred_table") != "tasks":
+            continue
+        cols = fk.get("constrained_columns") or []
+        if "task_id" not in cols:
+            continue
+        name = fk.get("name")
+        if name:
+            op.drop_constraint(name, "task_audit", type_="foreignkey")
 
 
 def downgrade() -> None:
