@@ -15,10 +15,12 @@
 - [Banco de dados / Database](#banco-de-dados)
 - [Execução / Running](#execucao)
 - [Testes / Tests](#testes)
+- [Comandos make / Make commands](#comandos-make)
 - [Endpoints](#endpoints)
 - [Exemplos de uso / Usage examples](#exemplos-de-uso)
 - [Estrutura do projeto / Project structure](#estrutura-do-projeto)
 - [Observações importantes / Important notes](#observacoes-importantes)
+- [Uso de IA no projeto / AI-assisted development](#uso-de-ia-no-projeto)
 
 ## Resumo
 TaskFlow API é uma API REST para gerenciamento de tarefas, desenvolvida com FastAPI, SQLAlchemy, PostgreSQL e Alembic. O projeto foi pensado como uma base acadêmica clara, organizada e pronta para crescer.
@@ -204,6 +206,68 @@ python -m pytest -q
 
 The suite uses a real database and depends on PostgreSQL being available and the migrations being applied.
 
+## Comandos make
+Na raiz do projeto existe um `Makefile`. Rode os comandos a partir da pasta deste repositório. Para ver os alvos com descrições curtas direto no terminal: `make help`.
+
+Todos os alvos definidos hoje são:
+
+| Comando | O que faz |
+| --- | --- |
+| `make help` | Mostra todos os alvos e uma linha de descrição cada |
+| `make install` | Instala dependências (`requirements.txt`) com o pip do `.venv` |
+| `make test` | Roda `pytest` em modo quiet (`-q`) |
+| `make test-verbose` | Roda `pytest` com saída verbosa (`-v`) |
+| `make run` | Sobe `uvicorn` em modo reload (`app.main:app`) |
+| `make migrate` | Aplica migrações: `alembic upgrade head` |
+| `make migrate-downgrade` | Volta uma revisão: `alembic downgrade -1` |
+| `make clean-pycache` | Remove pastas `__pycache__` e arquivos `.pyc` (usa PowerShell no Windows) |
+
+Todos usam `.venv/Scripts/python.exe`; crie e preencha o `.venv` antes conforme [Instalação](#instalacao).
+
+**GNU Make no Windows**: instale uma vez com o gerenciador de pacotes (`winget`):
+
+```powershell
+winget install -e --id ezwinports.make --accept-package-agreements --accept-source-agreements
+```
+
+Depois da instalação, **feche e reabra o terminal** (ou reinicie o Cursor) para o `PATH` ser atualizado. Na mesma sessão do PowerShell, você pode atualizar manualmente:
+
+```powershell
+$env:Path = [Environment]::GetEnvironmentVariable("Path","Machine") + ";" + [Environment]::GetEnvironmentVariable("Path","User") + ";" + $env:Path
+make --version
+```
+
+## Make commands
+There is a `Makefile` at the repository root. Run commands from this project folder. For short descriptions printed in the terminal, use `make help`.
+
+All targets currently defined:
+
+| Command | Description |
+| --- | --- |
+| `make help` | Prints every target and a one-line description |
+| `make install` | Installs dependencies (`requirements.txt`) via the `.venv` pip |
+| `make test` | Runs `pytest` in quiet mode (`-q`) |
+| `make test-verbose` | Runs `pytest` with verbose output (`-v`) |
+| `make run` | Starts `uvicorn` with reload (`app.main:app`) |
+| `make migrate` | Applies migrations: `alembic upgrade head` |
+| `make migrate-downgrade` | Rolls back one revision: `alembic downgrade -1` |
+| `make clean-pycache` | Removes `__pycache__` directories and `.pyc` files (uses PowerShell on Windows) |
+
+All of them use `.venv/Scripts/python.exe`; create and populate `.venv` first as described in [Installation](#installation).
+
+**GNU Make on Windows**: install once with Windows Package Manager (`winget`):
+
+```powershell
+winget install -e --id ezwinports.make --accept-package-agreements --accept-source-agreements
+```
+
+After installation, **close and reopen your terminal** (or restart Cursor) so the updated `PATH` is picked up. Within the same PowerShell session you can refresh manually:
+
+```powershell
+$env:Path = [Environment]::GetEnvironmentVariable("Path","Machine") + ";" + [Environment]::GetEnvironmentVariable("Path","User") + ";" + $env:Path
+make --version
+```
+
 ## Endpoints
 Base path da API: `/api/v1`
 
@@ -386,3 +450,55 @@ docs/           requirements and architecture documents
 - Audit records are internal to the domain and do not have dedicated endpoints for now.
 - API contracts are split into requests and responses by domain to make future expansion easier.
 - The project was organized to be clear for learners and maintainable for future contributors.
+
+## Uso de IA no projeto
+Este repositório foi desenvolvido com apoio de ferramentas de IA, em etapas distintas:
+
+1. **Documentação inicial (Vision e preparação de SRS)**  
+   Utilizou-se um agente previamente configurado para produzir documentos tipo *Vision*, a partir do que seria o escopo do projeto. Isso gerou:
+   - [`docs/vision_document_task_flow_api.md`](docs/vision_document_task_flow_api.md) — visão geral do produto/API  
+   - [`docs/srs_preparation_document_task_flow_api.md`](docs/srs_preparation_document_task_flow_api.md) — notas úteis para a elaboração do SRS  
+
+2. **SRS e material de suporte ao SAD**  
+   Em seguida, outro agente recebeu o vision document e material de suporte com dados extras e produziu:
+   - [`docs/task_flow_api_srs_final.md`](docs/task_flow_api_srs_final.md)  
+   - [`docs/task_flow_api_sad_support_document.md`](docs/task_flow_api_sad_support_document.md) — apoio à redação do SAD  
+
+3. **SAD e diagramas**  
+   Por fim, usou-se um agente focado na criação de documentos SAD a partir do SRS e de um documento adicional com informações pertinentes à arquitetura. Essa etapa gerou:
+   - [`docs/sad_task_flow_api_enterprise.md`](docs/sad_task_flow_api_enterprise.md)  
+   - Os artefatos em [`diagrams/`](diagrams/)  
+
+   Todo esse fluxo de **documentação** foi realizado **no ChatGPT pelo navegador**.
+
+4. **Implementação em código**  
+   Com os documentos acima como referência, a **implementação do programa** (incluindo refatorações) foi feita com **Codex em linha de comando**, priorizando **coerência entre documentação e código**.
+
+5. **Revisão de testes**  
+   Na etapa de **revisão e fortalecimento dos testes** utilizou-se o **Cursor**.
+
+## AI-assisted development
+This repository was built with AI assistance across several phases:
+
+1. **Initial documentation (Vision and SRS preparation)**  
+   A dedicated agent produced *Vision*-style artifacts from an initial project outline, generating:
+   - [`docs/vision_document_task_flow_api.md`](docs/vision_document_task_flow_api.md) — high-level vision  
+   - [`docs/srs_preparation_document_task_flow_api.md`](docs/srs_preparation_document_task_flow_api.md) — notes to support SRS drafting  
+
+2. **SRS and SAD-support material**  
+   Another agent took the vision document plus supporting inputs and produced:
+   - [`docs/task_flow_api_srs_final.md`](docs/task_flow_api_srs_final.md)  
+   - [`docs/task_flow_api_sad_support_document.md`](docs/task_flow_api_sad_support_document.md) — support for the SAD document  
+
+3. **SAD and diagrams**  
+   A SAD-focused agent then produced enterprise-style architecture documentation from the SRS and extra architecture-oriented material:
+   - [`docs/sad_task_flow_api_enterprise.md`](docs/sad_task_flow_api_enterprise.md)  
+   - The diagram assets under [`diagrams/`](diagrams/)  
+
+   This entire **documentation** workflow ran **in ChatGPT via the browser**.
+
+4. **Code implementation**  
+   With those documents as inputs, **application code** (including refactorings) was authored using **Codex from the command line**, aiming to keep **requirements/architecture docs and implementation aligned**.
+
+5. **Test review**  
+   **Cursor** was used when reviewing and improving the test suite.
