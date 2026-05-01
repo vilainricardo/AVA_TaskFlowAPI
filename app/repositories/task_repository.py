@@ -6,6 +6,7 @@ from sqlalchemy import Select, func, or_, select
 from sqlalchemy.orm import Session
 
 from app.models.task import Task
+from app.models.task_types import TaskPriority, TaskStatus
 
 
 class TaskRepository:
@@ -13,14 +14,14 @@ class TaskRepository:
         self,
         session: Session,
         *,
-        completed: bool | None = None,
-        priority: int | None = None,
+        status: TaskStatus | None = None,
+        priority: TaskPriority | None = None,
         text: str | None = None,
     ) -> list[Task]:
         statement: Select[tuple[Task]] = select(Task)
 
-        if completed is not None:
-            statement = statement.where(Task.completed == completed)
+        if status is not None:
+            statement = statement.where(Task.status == status)
         if priority is not None:
             statement = statement.where(Task.priority == priority)
         if text is not None:

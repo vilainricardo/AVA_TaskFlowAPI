@@ -4,8 +4,8 @@ TASKS {
     uuid id PK
     varchar title
     text description
-    boolean completed
-    smallint priority
+    varchar status
+    varchar priority
     timestamptz due_date
     timestamptz created_at
     timestamptz updated_at
@@ -23,7 +23,7 @@ TASK_AUDIT {
 
 ```mermaid
 flowchart TD
-A[Indexes] --> B[idx_tasks_completed]
+A[Indexes] --> B[idx_tasks_status]
 A --> C[idx_tasks_priority]
 A --> D[idx_tasks_due_date]
 A --> E[idx_tasks_created_at]

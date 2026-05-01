@@ -25,8 +25,8 @@ Criar, listar, consultar, atualizar, concluir, reabrir e excluir tarefas com doc
 - id
 - title
 - description
-- completed
-- priority
+- status
+- priority (enum)
 - due_date
 - created_at
 - updated_at
@@ -80,7 +80,7 @@ Criar, listar, consultar, atualizar, concluir, reabrir e excluir tarefas com doc
 - ID: FR-005
 - Nome: Concluir tarefa
 - Descrição: Marcar como concluída.
-- Regras de Negócio: completed=true.
+- Regras de Negócio: status=completed.
 - Prioridade: Must
 - Dependências: FR-001
 - Teste:
@@ -90,7 +90,7 @@ Criar, listar, consultar, atualizar, concluir, reabrir e excluir tarefas com doc
 - ID: FR-006
 - Nome: Reabrir tarefa
 - Descrição: Reabrir tarefa concluída.
-- Regras de Negócio: completed=false.
+- Regras de Negócio: status=queued.
 - Prioridade: Should
 - Dependências: FR-005
 - Teste:

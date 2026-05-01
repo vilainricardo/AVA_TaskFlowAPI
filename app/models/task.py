@@ -4,11 +4,12 @@ from datetime import datetime, timezone
 from typing import ClassVar
 from uuid import UUID, uuid4
 
-from sqlalchemy import Boolean, DateTime, Index, SmallInteger, String, Text, text
+from sqlalchemy import DateTime, Enum as SAEnum, Index, String, Text, text
 from sqlalchemy.dialects.postgresql import UUID as PGUUID
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.core.database import Base
+from app.models.task_types import TaskPriority, TaskStatus
 
 
 def utc_now() -> datetime:
@@ -18,7 +19,7 @@ def utc_now() -> datetime:
 class Task(Base):
     __tablename__: ClassVar[str] = "tasks"
     __table_args__: ClassVar[tuple[Index, ...]] = (
-        Index("idx_tasks_completed", "completed"),
+        Index("idx_tasks_status", "status"),
         Index("idx_tasks_priority", "priority"),
         Index("idx_tasks_due_date", "due_date"),
         Index("idx_tasks_created_at", "created_at"),
@@ -31,17 +32,29 @@ class Task(Base):
     )
     title: Mapped[str] = mapped_column(String(255), nullable=False)
     description: Mapped[str | None] = mapped_column(Text, nullable=True)
-    completed: Mapped[bool] = mapped_column(
-        Boolean,
+    status: Mapped[TaskStatus] = mapped_column(
+        SAEnum(
+            TaskStatus,
+            name="task_status",
+            native_enum=False,
+            create_constraint=True,
+            length=20,
+        ),
         nullable=False,
-        default=False,
-        server_default=text("false"),
+        default=TaskStatus.QUEUED,
+        server_default=text("'queued'"),
     )
-    priority: Mapped[int] = mapped_column(
-        SmallInteger,
+    priority: Mapped[TaskPriority] = mapped_column(
+        SAEnum(
+            TaskPriority,
+            name="task_priority",
+            native_enum=False,
+            create_constraint=True,
+            length=20,
+        ),
         nullable=False,
-        default=3,
-        server_default=text("3"),
+        default=TaskPriority.MEDIUM,
+        server_default=text("'medium'"),
     )
     due_date: Mapped[datetime | None] = mapped_column(
         DateTime(timezone=True),

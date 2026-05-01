@@ -6,14 +6,13 @@ from uuid import UUID
 from sqlalchemy.orm import Session
 
 from app.dtos.tasks import (
-    TaskCompleteRequest,
     TaskCreateRequest,
     TaskFilterRequest,
-    TaskReopenRequest,
     TaskUpdateRequest,
 )
 from app.models.task import Task
 from app.models.task_audit import TaskAudit
+from app.models.task_types import TaskPriority, TaskStatus
 from app.repositories import TaskRepository
 from app.services import TaskNotFoundError, TaskService
 
@@ -23,7 +22,7 @@ def test_create_task_persists_task_and_audit(db_session: Session) -> None:
     payload: TaskCreateRequest = TaskCreateRequest(
         title="Implementar API",
         description="Criar endpoints principais",
-        priority=2,
+        priority=TaskPriority.HIGH,
         due_date=datetime(2026, 4, 30, tzinfo=timezone.utc),
     )
 
@@ -31,7 +30,7 @@ def test_create_task_persists_task_and_audit(db_session: Session) -> None:
 
     assert isinstance(task.id, UUID)
     assert task.title == "Implementar API"
-    assert task.completed is False
+    assert task.status == TaskStatus.QUEUED
 
     audits: list[TaskAudit] = db_session.query(TaskAudit).order_by(TaskAudit.created_at.asc()).all()
     assert len(audits) == 1
@@ -44,14 +43,29 @@ def test_list_tasks_with_filters(db_session: Session) -> None:
 
     service.create_task(
         db_session,
-        TaskCreateRequest(title="Task Alpha", description="Primeira", completed=False, priority=1),
+        TaskCreateRequest(
+            title="Task Alpha",
+            description="Primeira",
+            status=TaskStatus.QUEUED,
+            priority=TaskPriority.LOW,
+        ),
     )
     service.create_task(
         db_session,
-        TaskCreateRequest(title="Task Beta", description="Segunda", completed=True, priority=3),
+        TaskCreateRequest(
+            title="Task Beta",
+            description="Segunda",
+            status=TaskStatus.COMPLETED,
+            priority=TaskPriority.HIGH,
+        ),
     )
 
-    tasks: list[Task] = repository.list(db_session, completed=True, priority=3, text="beta")
+    tasks: list[Task] = repository.list(
+        db_session,
+        status=TaskStatus.COMPLETED,
+        priority=TaskPriority.HIGH,
+        text="beta",
+    )
 
     assert len(tasks) == 1
     assert tasks[0].title == "Task Beta"
@@ -64,17 +78,23 @@ def test_update_complete_reopen_and_delete_task(db_session: Session) -> None:
     updated: Task = service.update_task(
         db_session,
         task.id,
-        TaskUpdateRequest(title="Task Atualizada", description=None, priority=5),
+        TaskUpdateRequest(
+            title="Task Atualizada",
+            description=None,
+            status=TaskStatus.IN_PROGRESS,
+            priority=TaskPriority.URGENT,
+        ),
     )
     assert updated.title == "Task Atualizada"
     assert updated.description is None
-    assert updated.priority == 5
+    assert updated.status == TaskStatus.IN_PROGRESS
+    assert updated.priority == TaskPriority.URGENT
 
-    completed: Task = service.complete_task(db_session, task.id, TaskCompleteRequest())
-    assert completed.completed is True
+    completed_task: Task = service.complete_task(db_session, task.id)
+    assert completed_task.status == TaskStatus.COMPLETED
 
-    reopened: Task = service.reopen_task(db_session, task.id, TaskReopenRequest())
-    assert reopened.completed is False
+    reopened_task: Task = service.reopen_task(db_session, task.id)
+    assert reopened_task.status == TaskStatus.QUEUED
 
     service.delete_task(db_session, task.id)
     remaining: list[Task] = service.list_tasks(db_session, TaskFilterRequest())
@@ -86,12 +106,12 @@ def test_task_mutations_record_audit_history(db_session: Session) -> None:
     task: Task = service.create_task(db_session, TaskCreateRequest(title="Task", description="Original"))
 
     service.update_task(db_session, task.id, TaskUpdateRequest(title="Task Atualizada"))
-    service.complete_task(db_session, task.id, TaskCompleteRequest())
-    service.reopen_task(db_session, task.id, TaskReopenRequest())
+    service.complete_task(db_session, task.id)
+    service.reopen_task(db_session, task.id)
 
     audits: list[TaskAudit] = db_session.query(TaskAudit).order_by(TaskAudit.created_at.asc()).all()
     assert [audit.action for audit in audits] == ["CREATE", "UPDATE", "COMPLETE", "REOPEN"]
-    assert audits[-1].after_state["completed"] is False
+    assert audits[-1].after_state["status"] == TaskStatus.QUEUED.value
 
     service.delete_task(db_session, task.id)
     remaining: list[Task] = service.list_tasks(db_session, TaskFilterRequest())
@@ -114,11 +134,14 @@ def test_delete_task_keeps_audit_history(db_session: Session) -> None:
 
 def test_list_tasks_with_filters_returns_no_results_when_no_match(db_session: Session) -> None:
     service: TaskService = TaskService()
-    service.create_task(db_session, TaskCreateRequest(title="Task Alpha", description="Primeira", priority=1))
+    service.create_task(
+        db_session,
+        TaskCreateRequest(title="Task Alpha", description="Primeira", priority=TaskPriority.LOW),
+    )
 
     tasks: list[Task] = service.list_tasks(
         db_session,
-        TaskFilterRequest(completed=True, priority=3, text="inexistente"),
+        TaskFilterRequest(status=TaskStatus.COMPLETED, priority=TaskPriority.HIGH, text="inexistente"),
     )
 
     assert tasks == []

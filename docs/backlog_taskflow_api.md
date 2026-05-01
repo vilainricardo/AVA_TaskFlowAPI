@@ -142,8 +142,8 @@ Este backlog foi revisado com base no código, nos testes, nas migrations, na do
 - [x] Definir a chave primária
 - [x] Definir o campo `title`
 - [x] Definir o campo `description`
-- [x] Definir o campo `completed`
-- [x] Definir o campo `priority`
+- [x] Definir o campo `status`
+- [x] Definir o campo `priority` como enum
 - [x] Definir o campo `due_date`
 - [x] Definir o campo `created_at`
 - [x] Definir o campo `updated_at`
@@ -157,7 +157,7 @@ Este backlog foi revisado com base no código, nos testes, nas migrations, na do
 - [x] Definir comportamento de atualização automática de timestamps
 
 ### 4.3 Índices
-- [x] Criar índice para `completed`
+- [x] Criar índice para `status`
 - [x] Criar índice para `priority`
 - [x] Criar índice para `due_date`
 - [x] Criar índice para `created_at`

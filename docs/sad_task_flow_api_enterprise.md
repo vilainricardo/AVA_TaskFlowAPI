@@ -86,15 +86,15 @@ DTOs Pydantic de entrada e saída.
 | id | UUID PK | gerado automaticamente |
 | title | varchar(255) | obrigatório |
 | description | text | opcional |
-| completed | boolean | default false |
-| priority | smallint | default 3 |
+| status | varchar(20) | default queued |
+| priority | varchar(20) | default medium |
 | due_date | timestamptz | opcional |
 | created_at | timestamptz | UTC |
 | updated_at | timestamptz | UTC |
 
 ## Índices Recomendados
 - PK(id)
-- idx_tasks_completed
+- idx_tasks_status
 - idx_tasks_priority
 - idx_tasks_due_date
 
@@ -152,7 +152,7 @@ flowchart TD
 A["PATCH /tasks/{id}/complete"] --> B[Buscar tarefa]
 B --> C{Existe?}
 C -- Não --> D[404]
-C -- Sim --> E[completed=true]
+C -- Sim --> E[status=completed]
 E --> F[updated_at=now]
 F --> G[UPDATE]
 G --> H[200 OK]
@@ -164,7 +164,7 @@ flowchart TD
 A["PATCH /tasks/{id}/reopen"] --> B[Buscar tarefa]
 B --> C{Existe?}
 C -- Não --> D[404]
-C -- Sim --> E[completed=false]
+C -- Sim --> E[status=queued]
 E --> F[updated_at=now]
 F --> G[UPDATE]
 G --> H[200 OK]

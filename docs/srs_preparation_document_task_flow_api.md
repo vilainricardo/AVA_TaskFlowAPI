@@ -9,8 +9,8 @@ Campos conceituais já identificados:
 - id
 - title
 - description
-- completed
-- priority
+- status
+- priority (enum)
 - created_at
 - updated_at
 - due_date (opcional)

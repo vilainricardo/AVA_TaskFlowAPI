@@ -10,7 +10,8 @@ def test_create_and_get_task(client: TestClient) -> None:
     payload: dict[str, object] = {
         "title": "API Task",
         "description": "Criada via router",
-        "priority": 2,
+        "priority": "high",
+        "status": "queued",
         "due_date": datetime(2026, 4, 30, tzinfo=timezone.utc).isoformat(),
     }
 
@@ -20,6 +21,7 @@ def test_create_and_get_task(client: TestClient) -> None:
     body: dict[str, object] = create_response.json()
     task_id = UUID(str(body["id"]))
     assert body["title"] == "API Task"
+    assert body["status"] == "queued"
 
     get_response = client.get(f"/api/v1/tasks/{task_id}")
     assert get_response.status_code == 200
@@ -31,7 +33,7 @@ def test_create_task_rejects_invalid_payload(client: TestClient) -> None:
         "/api/v1/tasks",
         json={
             "description": "Sem titulo",
-            "priority": 0,
+            "priority": "invalid",
         },
     )
 
@@ -46,12 +48,13 @@ def test_list_update_complete_reopen_delete_task(client: TestClient) -> None:
         json={
             "title": "Task listada",
             "description": "Lista e altera",
-            "priority": 3,
+            "priority": "high",
+            "status": "queued",
         },
     )
     task_id = str(create_response.json()["id"])
 
-    list_response = client.get("/api/v1/tasks", params={"completed": False, "priority": 3, "text": "lista"})
+    list_response = client.get("/api/v1/tasks", params={"status": "queued", "priority": "high", "text": "lista"})
     assert list_response.status_code == 200
     assert len(list_response.json()) == 1
 
@@ -60,19 +63,21 @@ def test_list_update_complete_reopen_delete_task(client: TestClient) -> None:
         json={
             "title": "Task listada atualizada",
             "description": None,
-            "priority": 4,
+            "status": "in_progress",
+            "priority": "urgent",
         },
     )
     assert update_response.status_code == 200
     assert update_response.json()["title"] == "Task listada atualizada"
+    assert update_response.json()["status"] == "in_progress"
 
-    complete_response = client.patch(f"/api/v1/tasks/{task_id}/complete", json={"completed": True})
+    complete_response = client.patch(f"/api/v1/tasks/{task_id}/complete")
     assert complete_response.status_code == 200
-    assert complete_response.json()["completed"] is True
+    assert complete_response.json()["status"] == "completed"
 
-    reopen_response = client.patch(f"/api/v1/tasks/{task_id}/reopen", json={"completed": False})
+    reopen_response = client.patch(f"/api/v1/tasks/{task_id}/reopen")
     assert reopen_response.status_code == 200
-    assert reopen_response.json()["completed"] is False
+    assert reopen_response.json()["status"] == "queued"
 
     delete_response = client.delete(f"/api/v1/tasks/{task_id}")
     assert delete_response.status_code == 204
@@ -90,10 +95,10 @@ def test_mutation_endpoints_return_404_for_missing_task(client: TestClient) -> N
     )
     assert update_response.status_code == 404
 
-    complete_response = client.patch(f"/api/v1/tasks/{missing_id}/complete", json={"completed": True})
+    complete_response = client.patch(f"/api/v1/tasks/{missing_id}/complete")
     assert complete_response.status_code == 404
 
-    reopen_response = client.patch(f"/api/v1/tasks/{missing_id}/reopen", json={"completed": False})
+    reopen_response = client.patch(f"/api/v1/tasks/{missing_id}/reopen")
     assert reopen_response.status_code == 404
 
     delete_response = client.delete(f"/api/v1/tasks/{missing_id}")

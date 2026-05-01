@@ -7,15 +7,14 @@ from uuid import UUID
 from sqlalchemy.orm import Session
 
 from app.dtos.tasks import (
-    TaskCompleteRequest,
     TaskCreateRequest,
     TaskFilterRequest,
     TaskReadResponse,
-    TaskReopenRequest,
     TaskUpdateRequest,
 )
 from app.models.task import Task
 from app.models.task_audit import TaskAudit
+from app.models.task_types import TaskStatus
 from app.repositories.task_repository import TaskRepository
 
 
@@ -112,7 +111,7 @@ class TaskService:
         task: Task = Task(
             title=payload.title,
             description=payload.description,
-            completed=payload.completed,
+            status=payload.status,
             priority=payload.priority,
             due_date=payload.due_date,
         )
@@ -142,7 +141,7 @@ class TaskService:
 
         return self._repository.list(
             session,
-            completed=filters.completed,
+            status=filters.status,
             priority=filters.priority,
             text=filters.text,
         )
@@ -179,14 +178,14 @@ class TaskService:
         session.refresh(task)
         return task
 
-    def complete_task(self, session: Session, task_id: UUID, payload: TaskCompleteRequest) -> Task:
+    def complete_task(self, session: Session, task_id: UUID) -> Task:
         """EN: Mark a task as completed and audit the transition.
         PT-BR: Marca uma tarefa como concluida e audita a transicao.
         """
 
         task: Task = self._get_task_or_raise(session, task_id)
         before_state: dict[str, Any] = self._serialize_task(task)
-        task.completed = payload.completed
+        task.status = TaskStatus.COMPLETED
         task.updated_at = utc_now()
         session.flush()
         self._create_audit(
@@ -200,14 +199,14 @@ class TaskService:
         session.refresh(task)
         return task
 
-    def reopen_task(self, session: Session, task_id: UUID, payload: TaskReopenRequest) -> Task:
+    def reopen_task(self, session: Session, task_id: UUID) -> Task:
         """EN: Reopen a completed task and audit the transition.
         PT-BR: Reabre uma tarefa concluida e audita a transicao.
         """
 
         task: Task = self._get_task_or_raise(session, task_id)
         before_state: dict[str, Any] = self._serialize_task(task)
-        task.completed = payload.completed
+        task.status = TaskStatus.QUEUED
         task.updated_at = utc_now()
         session.flush()
         self._create_audit(

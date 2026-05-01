@@ -34,10 +34,10 @@ The goal of the project is to demonstrate a simple but well-structured API for c
 
 ## Funcionalidades
 - Criar tarefas
-- Listar tarefas com filtros por conclusão, prioridade e texto
+- Listar tarefas com filtros por status, prioridade e texto
 - Consultar uma tarefa pelo ID
 - Atualizar dados da tarefa
-- Marcar como concluída
+- Alterar o status da tarefa para concluída
 - Reabrir uma tarefa concluída
 - Excluir uma tarefa
 - Manter histórico de auditoria das alterações
@@ -45,10 +45,10 @@ The goal of the project is to demonstrate a simple but well-structured API for c
 
 ## Features
 - Create tasks
-- List tasks with filters by completion, priority, and text search
+- List tasks with filters by status, priority, and text search
 - Get a task by ID
 - Update task data
-- Mark a task as completed
+- Move a task to the completed status
 - Reopen a completed task
 - Delete a task
 - Keep an audit history of changes
@@ -209,7 +209,7 @@ Base path da API: `/api/v1`
 | `GET` | `/tasks` | Lista tarefas com filtros opcionais |
 | `GET` | `/tasks/{task_id}` | Consulta uma tarefa pelo ID |
 | `PUT` | `/tasks/{task_id}` | Atualiza uma tarefa |
-| `PATCH` | `/tasks/{task_id}/complete` | Marca a tarefa como concluída |
+| `PATCH` | `/tasks/{task_id}/complete` | Altera o status da tarefa para concluída |
 | `PATCH` | `/tasks/{task_id}/reopen` | Reabre uma tarefa concluída |
 | `DELETE` | `/tasks/{task_id}` | Exclui uma tarefa |
 | `GET` | `/health` | Verifica se a aplicação e o banco estão acessíveis |
@@ -238,7 +238,7 @@ Here are some quick examples for common API calls.
 Para criar uma task sem usar a interface do Swagger, você pode enviar uma requisição `POST` assim:
 
 ```bash
-curl -X POST "http://127.0.0.1:8000/api/v1/tasks" -H "Content-Type: application/json" -d "{\"title\":\"Estudar testes\",\"description\":\"Revisar a cobertura\",\"priority\":2}"
+curl -X POST "http://127.0.0.1:8000/api/v1/tasks" -H "Content-Type: application/json" -d "{\"title\":\"Estudar testes\",\"description\":\"Revisar a cobertura\",\"status\":\"queued\",\"priority\":\"high\"}"
 ```
 
 Resposta esperada:
@@ -248,8 +248,8 @@ Resposta esperada:
   "id": "uuid-gerado-pela-api",
   "title": "Estudar testes",
   "description": "Revisar a cobertura",
-  "completed": false,
-  "priority": 2,
+  "status": "queued",
+  "priority": "high",
   "due_date": null,
   "created_at": "2026-05-01T12:00:00Z",
   "updated_at": "2026-05-01T12:00:00Z"
@@ -260,7 +260,7 @@ Resposta esperada:
 To create a task without using the Swagger UI, you can send a `POST` request like this:
 
 ```bash
-curl -X POST "http://127.0.0.1:8000/api/v1/tasks" -H "Content-Type: application/json" -d "{\"title\":\"Study tests\",\"description\":\"Review coverage\",\"priority\":2}"
+curl -X POST "http://127.0.0.1:8000/api/v1/tasks" -H "Content-Type: application/json" -d "{\"title\":\"Study tests\",\"description\":\"Review coverage\",\"status\":\"queued\",\"priority\":\"high\"}"
 ```
 
 Expected response:
@@ -270,8 +270,8 @@ Expected response:
   "id": "uuid-generated-by-the-api",
   "title": "Study tests",
   "description": "Review coverage",
-  "completed": false,
-  "priority": 2,
+  "status": "queued",
+  "priority": "high",
   "due_date": null,
   "created_at": "2026-05-01T12:00:00Z",
   "updated_at": "2026-05-01T12:00:00Z"
@@ -282,7 +282,7 @@ Expected response:
 Para listar tarefas com filtro, você pode usar uma requisição `GET`:
 
 ```bash
-curl "http://127.0.0.1:8000/api/v1/tasks?completed=false&priority=3&text=study"
+curl "http://127.0.0.1:8000/api/v1/tasks?status=queued&priority=high&text=study"
 ```
 
 Response example:
@@ -293,8 +293,8 @@ Response example:
     "id": "uuid-generated-by-the-api",
     "title": "Study tests",
     "description": "Review coverage",
-    "completed": false,
-    "priority": 3,
+    "status": "queued",
+    "priority": "high",
     "due_date": null,
     "created_at": "2026-05-01T12:00:00Z",
     "updated_at": "2026-05-01T12:00:00Z"
@@ -306,7 +306,7 @@ Response example:
 Para atualizar apenas alguns campos, envie um `PUT` com o payload desejado:
 
 ```bash
-curl -X PUT "http://127.0.0.1:8000/api/v1/tasks/<task_id>" -H "Content-Type: application/json" -d "{\"title\":\"Task atualizada\",\"priority\":4}"
+curl -X PUT "http://127.0.0.1:8000/api/v1/tasks/<task_id>" -H "Content-Type: application/json" -d "{\"title\":\"Task atualizada\",\"status\":\"in_progress\",\"priority\":\"urgent\"}"
 ```
 
 ### Excluir uma tarefa / Delete a task

@@ -8,11 +8,9 @@ from sqlalchemy.orm import Session
 
 from app.core.database import get_db
 from app.dtos.tasks import (
-    TaskCompleteRequest,
     TaskCreateRequest,
     TaskFilterRequest,
     TaskReadResponse,
-    TaskReopenRequest,
     TaskUpdateRequest,
 )
 from app.services import TaskNotFoundError, TaskService
@@ -70,8 +68,8 @@ def create_task(
     response_model=list[TaskReadResponse],
     summary="List tasks / Listar tarefas",
     description=(
-        "EN: Return tasks filtered by completion, priority, and text search.\n"
-        "PT-BR: Retorna tarefas filtradas por conclusao, prioridade e busca textual.\n\n"
+        "EN: Return tasks filtered by status, priority, and text search.\n"
+        "PT-BR: Retorna tarefas filtradas por status, prioridade e busca textual.\n\n"
         "Input / Entrada: Query filters TaskFilterRequest.\n"
         "Output / Saida: List of TaskReadResponse items."
     ),
@@ -152,16 +150,15 @@ def update_task(
     response_model=TaskReadResponse,
     summary="Complete task / Concluir tarefa",
     description=(
-        "EN: Mark a task as completed using the completion payload.\n"
-        "PT-BR: Marca uma tarefa como concluida usando o payload de conclusao.\n\n"
-        "Input / Entrada: task_id path parameter and TaskCompleteRequest body.\n"
+        "EN: Mark a task as completed using its UUID.\n"
+        "PT-BR: Marca uma tarefa como concluida usando seu UUID.\n\n"
+        "Input / Entrada: task_id path parameter.\n"
         "Output / Saida: Updated TaskReadResponse or 404."
     ),
     response_description="Completed task / Tarefa concluida",
 )
 def complete_task(
     task_id: UUID,
-    payload: TaskCompleteRequest,
     session: Annotated[Session, Depends(get_db)],
     service: Annotated[TaskService, Depends(get_task_service)],
 ) -> TaskReadResponse:
@@ -170,7 +167,7 @@ def complete_task(
     """
 
     try:
-        task = service.complete_task(session, task_id, payload)
+        task = service.complete_task(session, task_id)
     except TaskNotFoundError as error:
         _raise_not_found_error(error)
     return TaskReadResponse.model_validate(task)
@@ -181,16 +178,15 @@ def complete_task(
     response_model=TaskReadResponse,
     summary="Reopen task / Reabrir tarefa",
     description=(
-        "EN: Reopen a completed task using the reopen payload.\n"
-        "PT-BR: Reabre uma tarefa concluida usando o payload de reabertura.\n\n"
-        "Input / Entrada: task_id path parameter and TaskReopenRequest body.\n"
+        "EN: Reopen a completed task using its UUID.\n"
+        "PT-BR: Reabre uma tarefa concluida usando seu UUID.\n\n"
+        "Input / Entrada: task_id path parameter.\n"
         "Output / Saida: Updated TaskReadResponse or 404."
     ),
     response_description="Reopened task / Tarefa reaberta",
 )
 def reopen_task(
     task_id: UUID,
-    payload: TaskReopenRequest,
     session: Annotated[Session, Depends(get_db)],
     service: Annotated[TaskService, Depends(get_task_service)],
 ) -> TaskReadResponse:
@@ -199,7 +195,7 @@ def reopen_task(
     """
 
     try:
-        task = service.reopen_task(session, task_id, payload)
+        task = service.reopen_task(session, task_id)
     except TaskNotFoundError as error:
         _raise_not_found_error(error)
     return TaskReadResponse.model_validate(task)
