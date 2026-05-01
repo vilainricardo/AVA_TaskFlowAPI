@@ -39,7 +39,9 @@ def test_create_task_rejects_invalid_payload(client: TestClient) -> None:
 
     assert response.status_code == 422
     body = response.json()
-    assert len(body["detail"]) >= 1
+    error_fields: set[str] = {error["loc"][-1] for error in body["detail"]}
+    assert "title" in error_fields
+    assert "priority" in error_fields
 
 
 def test_list_update_complete_reopen_delete_task(client: TestClient) -> None:
@@ -103,3 +105,28 @@ def test_mutation_endpoints_return_404_for_missing_task(client: TestClient) -> N
 
     delete_response = client.delete(f"/api/v1/tasks/{missing_id}")
     assert delete_response.status_code == 404
+
+
+def test_get_task_returns_404_for_missing_task(client: TestClient) -> None:
+    missing_id = "00000000-0000-0000-0000-000000000000"
+
+    response = client.get(f"/api/v1/tasks/{missing_id}")
+
+    assert response.status_code == 404
+    assert "not found" in response.json()["detail"].lower()
+
+
+def test_get_task_rejects_invalid_uuid(client: TestClient) -> None:
+    response = client.get("/api/v1/tasks/not-a-uuid")
+
+    assert response.status_code == 422
+    error_fields: set[str] = {error["loc"][-1] for error in response.json()["detail"]}
+    assert "task_id" in error_fields
+
+
+def test_list_tasks_rejects_empty_text_filter(client: TestClient) -> None:
+    response = client.get("/api/v1/tasks", params={"text": ""})
+
+    assert response.status_code == 422
+    error_fields: set[str] = {error["loc"][-1] for error in response.json()["detail"]}
+    assert "text" in error_fields

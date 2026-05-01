@@ -156,3 +156,29 @@ def test_get_task_raises_not_found(db_session: Session) -> None:
         assert "not found" in str(error)
     else:
         raise AssertionError("TaskNotFoundError was not raised")
+
+
+def test_delete_task_raises_not_found(db_session: Session) -> None:
+    service: TaskService = TaskService()
+
+    try:
+        service.delete_task(db_session, UUID("00000000-0000-0000-0000-000000000000"))
+    except TaskNotFoundError as error:
+        assert "not found" in str(error)
+    else:
+        raise AssertionError("TaskNotFoundError was not raised")
+
+
+def test_update_task_raises_not_found(db_session: Session) -> None:
+    service: TaskService = TaskService()
+
+    try:
+        service.update_task(
+            db_session,
+            UUID("00000000-0000-0000-0000-000000000000"),
+            TaskUpdateRequest(title="Nao existe"),
+        )
+    except TaskNotFoundError as error:
+        assert "not found" in str(error)
+    else:
+        raise AssertionError("TaskNotFoundError was not raised")
